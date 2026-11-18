@@ -1,0 +1,22 @@
+// ------------------------------------------------------------------
+// Admin and privileged tools: single-factor sign-ins from trusted locations
+// Splits interactive and non-interactive sign-ins, so token refreshes are not mistaken for interactive admin sign-ins without MFA.
+// Runs in: Microsoft Defender XDR advanced hunting
+// Author:  Seán O'Farrell
+// Website: https://cloud-secure.ai/
+// ------------------------------------------------------------------
+let LookBack   = 7d;
+let AdminTools = dynamic([
+    "ADIbizaUX",                       // Azure portal
+    "Azure Resource Manager",
+    "MS-PIM",
+    "Microsoft Threat Protection",     // Defender portal
+    "Contoso-PAM-Vault"                // add your own privileged apps, e.g. a PAM vault
+]);
+EntraIdSignInEvents
+| where Timestamp > ago(LookBack) and ErrorCode == 0
+| where AuthenticationRequirement == "singleFactorAuthentication"
+| where NetworkLocationDetails has "trustedNamedLocation"
+| where Application in (AdminTools)
+| summarize SignIns = count(), Users = dcount(AccountUpn) by Application, LogonType
+| order by SignIns desc
