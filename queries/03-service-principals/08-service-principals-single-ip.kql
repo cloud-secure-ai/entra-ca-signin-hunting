@@ -1,0 +1,19 @@
+// ------------------------------------------------------------------
+// Application service principals that sign in from a single IP address
+// Candidates for a location-locked Conditional Access policy for workload identities (needs Microsoft Entra Workload ID Premium; single-tenant apps registered in your tenant only).
+// Runs in: Microsoft Defender XDR advanced hunting
+// Author:  Seán O'Farrell
+// Website: https://cloud-secure.ai/
+// ------------------------------------------------------------------
+let LookBack = 30d;
+EntraIdSpnSignInEvents
+| where Timestamp > ago(LookBack) and ErrorCode == 0
+| where IsManagedIdentity == false
+| summarize SignIns = count(),
+            IPs = dcount(IPAddress),
+            IPAddress = take_any(IPAddress),
+            Country = take_any(Country),
+            Resources = make_set(ResourceDisplayName, 10)
+    by ServicePrincipalName, ServicePrincipalId
+| where IPs == 1
+| order by SignIns desc
