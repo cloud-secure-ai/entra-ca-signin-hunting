@@ -1,0 +1,16 @@
+// ------------------------------------------------------------------
+// Successful sign-ins to an application from outside the allowed countries
+// Shows where users are reaching the app from today, so you can build the approved location list before you restrict it.
+// Runs in: Microsoft Defender XDR advanced hunting
+// Author:  Seán O'Farrell
+// Website: https://cloud-secure.ai/
+// ------------------------------------------------------------------
+let TargetAppId      = "00000000-0000-0000-0000-000000000000";
+let AllowedCountries = dynamic(["IE", "GB"]);                  // ISO two-letter country codes
+let LookBack         = 14d;
+EntraIdSignInEvents
+| where Timestamp > ago(LookBack) and ErrorCode == 0
+| where ApplicationId == TargetAppId
+| where isnotempty(Country) and Country !in (AllowedCountries)
+| summarize SignIns = count(), Users = dcount(AccountUpn), IPs = make_set(IPAddress, 10) by Country
+| order by SignIns desc
