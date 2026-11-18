@@ -1,0 +1,17 @@
+// ------------------------------------------------------------------
+// Service principal sign-in inventory
+// One row per service principal: volume, IPs, countries, resources and last seen. Separates managed identities, which sit outside Conditional Access.
+// Runs in: Microsoft Defender XDR advanced hunting
+// Author:  Seán O'Farrell
+// Website: https://cloud-secure.ai/
+// ------------------------------------------------------------------
+let LookBack = 30d;
+EntraIdSpnSignInEvents
+| where Timestamp > ago(LookBack) and ErrorCode == 0
+| summarize SignIns = count(),
+            IPs = dcount(IPAddress),
+            Countries = make_set(Country, 10),
+            Resources = make_set(ResourceDisplayName, 10),
+            LastSeen = max(Timestamp)
+    by ServicePrincipalName, ServicePrincipalId, IsManagedIdentity
+| order by SignIns desc
