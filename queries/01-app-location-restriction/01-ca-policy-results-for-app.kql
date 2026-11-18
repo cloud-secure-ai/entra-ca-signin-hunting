@@ -1,0 +1,20 @@
+// ------------------------------------------------------------------
+// Conditional Access results for one application
+// Shows how each matching policy evaluated for sign-ins to the target app, including report-only outcomes. Use it to test a new location policy before go-live.
+// Runs in: Microsoft Defender XDR advanced hunting
+// Author:  Seán O'Farrell
+// Website: https://cloud-secure.ai/
+// ------------------------------------------------------------------
+// Set these for your tenant
+let TargetAppId   = "00000000-0000-0000-0000-000000000000";   // enterprise application (client) ID
+let PolicyMatches = dynamic(["Contoso-App-Approved-Locations", "Contoso-App-Block-Outside-Approved-Locations"]);        // text that appears in the policy names to report on
+let LookBack      = 14d;
+EntraIdSignInEvents
+| where Timestamp > ago(LookBack)
+| where ApplicationId == TargetAppId
+| mv-expand CAP = parse_json(ConditionalAccessPolicies)
+| extend PolicyName = tostring(CAP.displayName), Result = tostring(CAP.result)
+| where PolicyName has_any (PolicyMatches)
+| summarize SignIns = count(), Users = dcount(AccountUpn) by PolicyName, Result
+| order by PolicyName asc, SignIns desc
+// reportOnlyFailure = the sign-in would have been blocked or failed the grant if the policy were On
