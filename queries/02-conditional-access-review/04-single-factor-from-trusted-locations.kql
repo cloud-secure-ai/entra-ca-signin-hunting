@@ -1,0 +1,14 @@
+// ------------------------------------------------------------------
+// Single-factor sign-ins from trusted named locations
+// Measures the effect of excluding 'All trusted locations' from an MFA policy. Run before and after removing the exclusion.
+// Runs in: Microsoft Defender XDR advanced hunting
+// Author:  Seán O'Farrell
+// Website: https://cloud-secure.ai/
+// ------------------------------------------------------------------
+let LookBack = 14d;
+EntraIdSignInEvents
+| where Timestamp > ago(LookBack) and ErrorCode == 0
+| where AuthenticationRequirement == "singleFactorAuthentication"
+| where NetworkLocationDetails has "trustedNamedLocation"
+| summarize SignIns = count(), Users = dcount(AccountUpn) by Application
+| order by SignIns desc
