@@ -1,0 +1,18 @@
+// ------------------------------------------------------------------
+// Sign-ins a report-only block policy would stop at go-live
+// Lists the countries, users and IPs that would be blocked once the policy is switched On. Legitimate results point to a missing approved location.
+// Runs in: Microsoft Defender XDR advanced hunting
+// Author:  Seán O'Farrell
+// Website: https://cloud-secure.ai/
+// ------------------------------------------------------------------
+let TargetAppId     = "00000000-0000-0000-0000-000000000000";
+let BlockPolicyName = "Contoso-App-Block-Outside-Approved-Locations";   // exact display name
+let LookBack        = 14d;
+EntraIdSignInEvents
+| where Timestamp > ago(LookBack)
+| where ApplicationId == TargetAppId
+| mv-expand CAP = parse_json(ConditionalAccessPolicies)
+| where tostring(CAP.displayName) == BlockPolicyName
+| where tostring(CAP.result) == "reportOnlyFailure"
+| summarize SignIns = count(), Users = dcount(AccountUpn), IPs = make_set(IPAddress, 20) by Country
+| order by SignIns desc
