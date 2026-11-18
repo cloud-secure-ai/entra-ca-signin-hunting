@@ -1,0 +1,18 @@
+// ------------------------------------------------------------------
+// Sign-ins with no Conditional Access policy applied, by account
+// Groups no-policy sign-ins by account. A large '{PII Removed}' row with no object ID or IP usually means external users from another tenant (B2B direct connect, Teams federation or cross-tenant passthrough), not an excluded local account.
+// Runs in: Microsoft Defender XDR advanced hunting
+// Author:  Seán O'Farrell
+// Website: https://cloud-secure.ai/
+// ------------------------------------------------------------------
+let LookBack = 7d;
+EntraIdSignInEvents
+| where Timestamp > ago(LookBack) and ErrorCode == 0
+| where ConditionalAccessStatus == 2          // 2 = not applied
+| where isempty(Application)
+| summarize SignIns = count(),
+            Resources = dcount(ResourceDisplayName),
+            SampleResources = make_set(ResourceDisplayName, 15),
+            IPs = make_set(IPAddress, 10)
+    by AccountUpn, AccountObjectId
+| order by SignIns desc
