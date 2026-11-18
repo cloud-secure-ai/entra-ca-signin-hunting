@@ -36,7 +36,6 @@ Use these when you restrict an application (for example a VDI gateway) to approv
 - Set the `let` variables at the top of each query: the application ID, policy names, allowed countries and look-back period.
 - `reportOnlyFailure` means the sign-in would have been blocked, or would have failed the grant, if the policy were On.
 - Single-factor counts include non-interactive token refreshes. Use query 05 to separate them before drawing conclusions about interactive sign-ins.
-- A large `{PII Removed}` row in query 06, with no object ID or IP address, is normally external users from another tenant (B2B direct connect, Teams federation or cross-tenant passthrough), not a local account excluded from Conditional Access.
 - Managed identities sit outside Conditional Access. Conditional Access for application service principals needs Microsoft Entra Workload ID Premium and only applies to single-tenant apps registered in your own tenant.
 
 ## Author
